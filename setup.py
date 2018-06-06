@@ -19,8 +19,9 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='scipion_empiar_depositor',
-    version='1.0.0a0',
+    version='1.0.0a1',
     description='A Scipion plugin to make depositions to EMPIAR',
+    long_description=long_description,
     url='https://github.com/yaizar/scipion_empiar_depositor',
     author='Yaiza Rancel',
     author_email='cyrancel@cnb.csic.es',
@@ -29,5 +30,5 @@ setup(
     install_requires=['empiar-depositor', 'jsonschema'],
     package_data={
        'empiar': ['EMPIAR_logo.png', 'empiar_deposition.schema.json', 'empiar_deposition_template.json'],
-    },
+    }
 )
