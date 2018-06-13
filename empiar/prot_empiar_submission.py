@@ -154,10 +154,7 @@ class EmpiarDepositor(EMProtocol):
 
     def _defineParams(self, form):
         form.addSection(label='Entry')
-        form.addParam('jsonTemplate', params.PathParam,
-                      label="Custom json (Optional)", allowsNull=True,
-                      help="Path to a customized template of the EMPIAR submission json, if you don't want to use the "
-                           "default one.")
+
         # form.addParam('workflowJson', params.PathParam,
         #               label='Workflow json', allowsNull=True,
         #               help='Path to the workflow json (obtained using the export option (right click on'
@@ -171,16 +168,25 @@ class EmpiarDepositor(EMProtocol):
         form.addParam('uniqueDir', params.StringParam, important=True,
                       label="Unique directory", condition="resume",
                       help="EMPIAR directory assigned to this deposition ID")
+        form.addParam('depositionJson', params.PathParam, important=True,
+                      label="Deposition json", condition="resume",
+                      help="Path to the json file of the deposition we're about to resume.")
+
+        form.addParam('jsonTemplate', params.PathParam, condition='not resume',
+                      label="Custom json (Optional)", allowsNull=True,
+                      help="Path to a customized template of the EMPIAR submission json, if you don't want to use the "
+                           "default one.")
         form.addParam('entryTopLevel', params.StringParam, label="Top level folder",
                       validators=[params.NonEmpty], important=True,
                       help="How you want to name the top level folder of the empiar entry. \n This should be a "
-                           "simple and descriptive name without special characters (:,?, spaces, etc)")
-        form.addParam('entryTitle', params.StringParam, label="Entry title", important=True,
+                           "simple and descriptive name without special characters (:,?, spaces, etc). \n"
+                           "If you're resuming an upload, this should be the same name you used to create the folder.")
+        form.addParam('entryTitle', params.StringParam, label="Entry title", important=True, condition="not resume",
                       help="EMPIAR entry title. This should not be empty if not using a custom template.")
-        form.addParam('entryAuthor', params.StringParam, label="Entry author", important=True,
+        form.addParam('entryAuthor', params.StringParam, label="Entry author", important=True, condition="not resume",
                       help='EMPIAR entry author in the form "LastName, Initials" e.g. Smith, JW\n'
                            'This should not be empty if not using a custom template.')
-        form.addParam('experimentType', params.EnumParam, label="Experiment type",
+        form.addParam('experimentType', params.EnumParam, label="Experiment type", condition="not resume",
                       choices=self._experimentTypes, default=2, important=True,
                       help="EMPIAR experiment type:\n"
                            "1 - image data collected using soft x-ray tomography\n"
@@ -194,7 +200,7 @@ class EmpiarDepositor(EMProtocol):
                            "    (like the Gatan 3View system)\n"
                            "5 - image data collected using focused ion beam scanning electron microscopy\n"
                            "6 - integrative hybrid modelling data.")
-        form.addParam('releaseDate', params.EnumParam, label="Release date",
+        form.addParam('releaseDate', params.EnumParam, label="Release date", condition="not resume",
                       choices=self._releaseDateTypes, default=2, important=True,
                       help="EMPIAR release date:\n"
                            "Options for releasing entry to the public: \n"
@@ -206,7 +212,7 @@ class EmpiarDepositor(EMProtocol):
 
         form.addSection(label='Image sets')
         self.inputSetsParam = form.addParam('inputSets', params.MultiPointerParam,
-                                            label="Input set", important=True,
+                                            label="Input set", important=True, condition="not resume",
                                             pointerClass='EMSet,Volume', minNumObjects=1,
                                             help='Select one set (of micrographs, particles,'
                                                  ' volumes, etc.) to be deposited to EMPIAR.')
@@ -215,35 +221,35 @@ class EmpiarDepositor(EMProtocol):
         #               help='Image set to be uploaded to EMPIAR\n')
 
         form.addSection(label="Principal investigator")
-        form.addParam('piFirstName', params.StringParam, label='First name',
+        form.addParam('piFirstName', params.StringParam, label='First name', condition="not resume",
                       help="PI first name e.g. Juan- this should not be empty if not using a custom template.")
-        form.addParam('piLastName', params.StringParam, label='Last name',
+        form.addParam('piLastName', params.StringParam, label='Last name', condition="not resume",
                       help='PI Last name e.g. Perez - this should not be empty if not using a custom template.')
-        form.addParam('piOrg', params.StringParam, label='organization',
+        form.addParam('piOrg', params.StringParam, label='organization', condition="not resume",
                       help="The name of the organization e.g. Biocomputing Unit, CNB-CSIC \n"
                            "This should not be empty if not using a custom template.")
-        form.addParam('piEmail', params.StringParam, label="Email",
+        form.addParam('piEmail', params.StringParam, label="Email", condition="not resume",
                       help='PI Email address e.g. jperez@org.es - '
                            'this should not be empty if not using a custom template.')
-        form.addParam('piCountry', params.StringParam, label="Country",
+        form.addParam('piCountry', params.StringParam, label="Country", condition="not resume",
                       help="Two letter country code eg. ES. This should not be empty if not using a custom template."
                            "\nValid country codes are %s" % " ".join(self._countryCodes))
 
 
         form.addSection(label="Corresponding Author")
-        form.addParam('caFirstName', params.StringParam, label='First name',
+        form.addParam('caFirstName', params.StringParam, label='First name', condition="not resume",
                       help="Corresponding author's first name e.g. Juan. "
                            "This should not be empty if not using a custom template. ")
-        form.addParam('caLastName', params.StringParam, label='Last name',
+        form.addParam('caLastName', params.StringParam, label='Last name', condition="not resume",
                       help="Corresponding author's Last name e.g. Perez. "
                            "This should not be empty if not using a custom template.")
-        form.addParam('caOrg', params.StringParam, label='organization',
+        form.addParam('caOrg', params.StringParam, label='organization', condition="not resume",
                       help="The name of the organization e.g. Biocomputing Unit, CNB-CSIC."
                            "This should not be empty if not using a custom template.")
-        form.addParam('caEmail', params.StringParam, label="Email",
+        form.addParam('caEmail', params.StringParam, label="Email", condition="not resume",
                       help="Corresponding author's Email address e.g. jperez@org.es. "
                            "This should not be empty if not using a custom template.")
-        form.addParam('caCountry', params.StringParam, label="Country",
+        form.addParam('caCountry', params.StringParam, label="Country", condition="not resume",
                       help="Two letter country code e.g. ES. This should not be empty if not using a custom template."
                            "\nValid country codes are %s" % " ".join(self._countryCodes))
 
@@ -262,31 +268,34 @@ class EmpiarDepositor(EMProtocol):
 
     def createDepositionStep(self):
         # make folder in extra
-        pwutils.makePath(self._getExtraPath(self.entryTopLevel.get()))
+        if not self.resume:
+            pwutils.makePath(self._getExtraPath(self.entryTopLevel.get()))
 
-        # export workflow json
-        self.exportWorkflow()
+            # export workflow json
+            self.exportWorkflow()
 
-        # create deposition json
-        jsonTemplatePath = self.jsonTemplate.get('').strip()
-        if not jsonTemplatePath:
-            jsonTemplatePath = self.getJsonTemplatePath()
-        entryAuthorStr = self.entryAuthor.get().split(',')
-        self.entryAuthorStr = "'%s', '%s'" % (entryAuthorStr[0].strip(), entryAuthorStr[1].strip())
-        self.releaseDate = self._releaseDateTypes[self.releaseDate.get()]
-        self.experimentType = self.experimentType.get()+1
-        jsonStr = open(jsonTemplatePath, 'rb').read().decode('utf-8')
-        jsonStr = jsonStr % self.__dict__
-        depoDict = json.loads(jsonStr)
-        imageSets = self.processImageSets()
-        depoDict[self.IMGSET_KEY] = imageSets
-        depoJson = self.getTopLevelPath(self.OUTPUT_DEPO_JSON)
-        with open(depoJson, 'w') as f:
-            # f.write(jsonStr.encode('utf-8'))
-            json.dump(depoDict, f, indent=4)
+            # create deposition json
+            jsonTemplatePath = self.jsonTemplate.get('').strip() or self.getJsonTemplatePath()
 
-        # self.depositionJsonPath = depoJson
-        self.depositionJsonPath.set(depoJson)
+            entryAuthorStr = self.entryAuthor.get().split(',')
+            self.entryAuthorStr = "'%s', '%s'" % (entryAuthorStr[0].strip(), entryAuthorStr[1].strip())
+            self.releaseDate = self._releaseDateTypes[self.releaseDate.get()]
+            self.experimentType = self.experimentType.get()+1
+            jsonStr = open(jsonTemplatePath, 'rb').read().decode('utf-8')
+            jsonStr = jsonStr % self.__dict__
+            depoDict = json.loads(jsonStr)
+            imageSets = self.processImageSets()
+            depoDict[self.IMGSET_KEY] = imageSets
+            depoJson = self.getTopLevelPath(self.OUTPUT_DEPO_JSON)
+            with open(depoJson, 'w') as f:
+                # f.write(jsonStr.encode('utf-8'))
+                json.dump(depoDict, f, indent=4)
+            # self.depositionJsonPath = depoJson
+            self.depositionJsonPath.set(depoJson)
+        else:
+            self.depositionJsonPath.set(self.depositionJson.get())
+            with open(self.depositionJson.get()) as f:
+                depoDict = json.load(f)
         self._store()
         self.validateDepoJson(depoDict)
 
@@ -298,13 +307,10 @@ class EmpiarDepositor(EMProtocol):
                 'ascp': os.environ[ASCP_PATH],
                 'dataDir': os.path.abspath(self.getTopLevelPath())
                 }
-        depositorCall = depositorCall % args
 
-        try:
-            empiar_depositor.main(depositorCall.split())
-        except Exception as e:
-            print e
-            raise
+        depositorCall = depositorCall % args
+        print("Empiar depositor call: %s" % depositorCall)
+        empiar_depositor.main(depositorCall.split())
 
     def createOutputStep(self):
         pass
@@ -357,7 +363,7 @@ class EmpiarDepositor(EMProtocol):
             setName = inputSet.getObjName()
             setParentId = inputSet.getObjParentId()
             setParentObj = project.getObject(setParentId)
-            protDicts[setParentId]['filesPath'] = os.path.join('.', self.entryTopLevel.get(), setName)
+            protDicts[setParentId]['filesPath'] = os.path.join('.', setName)
             pwutils.createLink(setParentObj._getExtraPath(), self.getTopLevelPath(setName))
 
         with open(workflowJsonPath, 'w') as f:
