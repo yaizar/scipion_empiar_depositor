@@ -154,13 +154,16 @@ class EmpiarDepositor(EMProtocol):
 
     def _defineParams(self, form):
         form.addSection(label='Entry')
-
         # form.addParam('workflowJson', params.PathParam,
         #               label='Workflow json', allowsNull=True,
         #               help='Path to the workflow json (obtained using the export option (right click on'
         #                     'one of your selected protocols). Will generate json of all protocols if not provided.')
+        form.addParam("submit", params.BooleanParam,
+                      label="Submit deposition", default=True,
+                      help="Set to false to avoid submitting the deposition to empiar "
+                           "(it will just be created locally).")
         form.addParam("resume", params.BooleanParam,
-                      label="Resume upload", default=False,
+                      label="Resume upload", default=False, condition='submit',
                       help="Is this a continuation of a previous upload?")
         form.addParam('entryID', params.StringParam,
                       label="Entry ID", condition="resume", important=True,
@@ -259,12 +262,10 @@ class EmpiarDepositor(EMProtocol):
 
     def _insertAllSteps(self):
         self._insertFunctionStep('createDepositionStep')
-        self._insertFunctionStep('submitDepositionStep')
+        if self.submit:
+            self._insertFunctionStep('submitDepositionStep')
 
     # --------------- STEPS functions -----------------------
-
-    def convertInputStep(self):
-        pass
 
     def createDepositionStep(self):
         # make folder in extra
@@ -312,19 +313,17 @@ class EmpiarDepositor(EMProtocol):
         print("Empiar depositor call: %s" % depositorCall)
         empiar_depositor.main(depositorCall.split())
 
-    def createOutputStep(self):
-        pass
-
     # --------------- INFO functions -------------------------
 
     def _validate(self):
         errors = []
-        if EMPIAR_TOKEN not in os.environ:
-            errors.append("Environment variable %s not set. Please set your %s in ~/.config/scipion/scipion.conf "
-                          "or in your environment." % (EMPIAR_TOKEN, EMPIAR_TOKEN))
-        if ASPERA_PASS not in os.environ:
-            errors.append("Environment variable %s not set. Please set your %s in ~/.config/scipion/scipion.conf "
-                          "or in your environment." % (ASPERA_PASS, ASPERA_PASS))
+        if self.submit:
+            if EMPIAR_TOKEN not in os.environ:
+                errors.append("Environment variable %s not set. Please set your %s in ~/.config/scipion/scipion.conf "
+                              "or in your environment." % (EMPIAR_TOKEN, EMPIAR_TOKEN))
+            if ASPERA_PASS not in os.environ:
+                errors.append("Environment variable %s not set. Please set your %s in ~/.config/scipion/scipion.conf "
+                              "or in your environment." % (ASPERA_PASS, ASPERA_PASS))
         return errors
 
     def _citations(self):
